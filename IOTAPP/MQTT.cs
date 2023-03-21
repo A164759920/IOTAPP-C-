@@ -18,12 +18,19 @@ namespace MQTT_API
 
     public static class MQTT_Client
     {
+        private static string pid = "583419";
+        private static string deviceName = "mqtt-can1";
         private static MqttClient mqttClient = null;
         private static string ServerUrl = "mqtts.heclouds.com";
         private static int Port = 1883;
         private static string UserId = "583419";
-        private static string Password = "version=2018-10-31&res=products%2F583419%2Fdevices%2Fmqtt-can1&et=1679398728&method=md5&sign=6kjeNVitZ6QC1Yg5oNQ%2FWg%3D%3D";
+        private static string Password = "";
+        private static string[] SubsribeList = {
+            "$sys/583419/mqtt-can1/dp/post/json/+",
+            "$sys/583419/mqtt-can1/image/get/accepted",
+            "$sys/583419/mqtt-can1/image/get/rejected",
 
+            };
         public static JArray createDpItem(int Vdata)
         {
             JObject vObject = new JObject();
@@ -74,21 +81,24 @@ namespace MQTT_API
                 }
             }
         }
-        public async static void Publish()
+        /*
+         * 获取ONENET设备镜像状态
+         */
+        public async static void GetStatus()
         {
-
-            var tempArray = createDpItem(25);
-            var powerArray = createDpItem(5);
-            JObject DataObj = new JObject();
-            DataObj.Add("temperatrue", tempArray);
-            DataObj.Add("power", powerArray);
-            JObject tempObj = new JObject();
-            tempObj.Add(new JProperty("id", 123));
-            tempObj.Add(new JProperty("dp", DataObj));
-            // Console.WriteLine(tempObj.ToString());
             var message = new MqttApplicationMessageBuilder()
-                            .WithTopic("$sys/583419/mqtt-can1/dp/post/json")
-                            .WithPayload(tempObj.ToString())
+                                .WithTopic($"$sys/{pid}/{deviceName}/image/get")
+                                .WithPayload("")
+                                .Build();
+            await mqttClient.PublishAsync(message, CancellationToken.None);
+        }
+
+        // 上报模拟传感器数据
+        public async static void Data_Publish(String payload)
+        {
+            var message = new MqttApplicationMessageBuilder()
+                            .WithTopic($"$sys/{pid}/{deviceName}/dp/post/json")
+                            .WithPayload(payload)
                             .Build();
             await mqttClient.PublishAsync(message,CancellationToken.None);
         }
@@ -96,7 +106,11 @@ namespace MQTT_API
         // 连接成功触发
         private static async Task Connected(MqttClientConnectedEventArgs e)
         {
-            await mqttClient.SubscribeAsync(new MqttTopicFilterBuilder().WithTopic("$sys/583419/mqtt-can1/dp/post/json/+").Build());
+            // 循环SubsribeList订阅所有Topic
+            for (int i=0; i< SubsribeList.Length; i++)
+            {
+                await mqttClient.SubscribeAsync(new MqttTopicFilterBuilder().WithTopic(SubsribeList[i]).Build());
+            }
             Console.WriteLine("### SUBSCRIBED ###");
         }
 

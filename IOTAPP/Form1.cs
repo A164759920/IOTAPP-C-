@@ -16,6 +16,7 @@ namespace IOTAPP
         public Form1()
         {
             InitializeComponent();
+            canDevice.InitDevice();
         }
 
         private void Form1_Load(object sender, EventArgs e)
@@ -30,12 +31,19 @@ namespace IOTAPP
 
         private void button2_Click(object sender, EventArgs e)
         {
-            MQTT_API.MQTT_Client.Publish();
+            canDevice.InitDevice();
+            var Payload =  canDevice.createJSONData(123);
+            MQTT_API.MQTT_Client.Data_Publish(Payload);
         }
 
         private void button3_Click(object sender, EventArgs e)
         {
             MQTT_API.MQTT_Client.Disconnect();
+        }
+
+        private void button4_Click(object sender, EventArgs e)
+        {
+            MQTT_API.MQTT_Client.GetStatus();
         }
     }
 }
