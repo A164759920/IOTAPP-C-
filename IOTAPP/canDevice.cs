@@ -4,37 +4,44 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Newtonsoft.Json.Linq;
-using MQTT_API;
-
 namespace IOTAPP
 {
+
     public class canDevice
     {
+        // 状态参数
+        public  string controlState = "0";  // 0-本地控制(local)  1-远程控制(remote)
+        public  string hotState = "0";
+        public  string coldState = "0";
+        public  string acidState = "0";
+        public  string baseState = "0";
+        public  string whiskState = "0";
+
         // 温度
-        public static Double temperature = 0;
-        public static double[] tempRange = { 20, 35 };
+        public  Double temperature = 0;
+        public  double[] tempRange = { 20, 35 };
         // 溶氧
-        public static Double oxygen = 0;
-        public static double[] oxygenRange = { 40, 50 };
+        public  Double oxygen = 0;
+        public  double[] oxygenRange = { 40, 50 };
         // pH
-        public static Double pH = 0;
-        public static double[] pHRange = { 6, 7};
+        public  Double pH = 0;
+        public  double[] pHRange = { 6, 7 };
         // 泡沫
-        public static Double foam = 0;
-        public static double[] foamRange = { 40, 50 };
+        public  Double foam = 0;
+        public  double[] foamRange = { 40, 50 };
 
         /*
-         * 生成指定范围 + 小数位数 的随机数
+         * @description 生成指定范围 + 小数位数 的随机数
         */
-        private static double NextDouble(Random ran, double minValue, double maxValue, int decimalPlace)
+        private  double NextDouble(Random ran, double minValue, double maxValue, int decimalPlace)
         {
             double randNum = ran.NextDouble() * (maxValue - minValue) + minValue;
             return Convert.ToDouble(randNum.ToString("f" + decimalPlace));
         }
         /*
-         * 创建dp的payload
+         * @description 创建dp的payload
          */
-        private static JArray createDpItem(double Vdata)
+        public  JArray createDpItem(double Vdata)
         {
             JObject vObject = new JObject();
             vObject.Add("v", Vdata);
@@ -45,7 +52,7 @@ namespace IOTAPP
         /*
          * 创建上报payload
          */
-        public static String createJSONData(int id)
+        public  string createJSONData(int id)
         {
             JObject DataObj = new JObject();
             var tempArray = createDpItem(temperature);
@@ -63,22 +70,142 @@ namespace IOTAPP
         }
 
         /*
-         * 初始化设备参数
+         * @description 初始化设备参数
          */
-        public static void InitDevice()
+        public  void InitDevice()
         {
-            temperature = NextDouble(new Random(), tempRange[0], tempRange[1],2);
-            oxygen = NextDouble(new Random(), oxygenRange[0], oxygenRange[1],2);
-            pH = NextDouble(new Random(), pHRange[0], pHRange[1],2);
-            foam = NextDouble(new Random(), foamRange[0], foamRange[1],2);
-            /*
-             *Console.WriteLine("温度"+ temperature);
-             *Console.WriteLine("溶氧" + oxygen);
-             *Console.WriteLine("ph" + pH);
-             *Console.WriteLine("泡沫" + foam);
+            temperature = NextDouble(new Random(), tempRange[0], tempRange[1], 2);
+            oxygen = NextDouble(new Random(), oxygenRange[0], oxygenRange[1], 2);
+            pH = NextDouble(new Random(), pHRange[0], pHRange[1], 2);
+            foam = NextDouble(new Random(), foamRange[0], foamRange[1], 2);
+
+            Console.WriteLine("温度" + temperature);
+            Console.WriteLine("溶氧" + oxygen);
+            Console.WriteLine("ph" + pH);
+            Console.WriteLine("泡沫" + foam);/*
+
              */
         }
+        /*
+         * @description 设置 远程控制时 设备状态 desired
+         */
+        public  void Remote_SetState(string rawData)
+        {
+            // 若为本地控制模式，则不处理
+            JObject rss = JObject.Parse(rawData);
+            //controlState = (string)rss["state"]["desired"]["controlState"];
+            if(controlState == "1")
+            {
+                hotState = (string)rss["state"]["desired"]["hotState"];
+                coldState = (string)rss["state"]["desired"]["coldState"];
+                acidState = (string)rss["state"]["desired"]["acidState"];
+                baseState = (string)rss["state"]["desired"]["baseState"];
+                whiskState = (string)rss["state"]["desired"]["whiskState"];
+            }
+            else
+            {
+                Console.WriteLine("[定位]Remote_SetState为本地控制模式，不同步数据");
+            }
+ 
+        }
+
+        // 处理Remote模式下的Delta信息
+        public  string Remote_handleDelta(string rawData)
+        {
+
+             void syncLocalStateByDelta(string Name,string Value)
+            {
+                switch (Name)
+                {
+                    case "hotState":
+                        hotState = Value;
+                        break;
+                    case "coldState":
+                        coldState = Value;
+                        break;
+                    case "acidState":
+                        acidState = Value;
+                        break;
+                    case "baseState":
+                        baseState = Value;
+                        break;
+                    case "whiskState":
+                        whiskState = Value;
+                        break;
+                    default:
+                       Console.WriteLine("【syncLocalStateByDelta】未命中");
+                        break;
+                }
+            }
+
+            JObject rss = JObject.Parse(rawData);
+            // 先更新controlState的状态
+            if (rss["state"]["controlState"].ToString() != "")
+            {
+                controlState = rss["state"]["controlState"].ToString();
+            }
+            // 遍历Delta数据的state的key-value 更新本地的state的信息
+            if(controlState == "1")
+            {
+                Console.WriteLine("待同步的字段", rss["state"].ToString());
+                foreach (JProperty item in rss["state"])
+                {
+                    // Console.WriteLine("{0} : {1}", item.Name, item.Value);
+                    // 同步本地state
+                    
+                    syncLocalStateByDelta(item.Name.ToString(), item.Value.ToString());
+                }
+                // 同步状态后全量状态上报
+                JObject reportedObj = new JObject();
+                string[] allState = { "controlState", "hotState", "coldState", "acidState", "baseState", "whiskState" };
+                reportedObj.Add("reported", createStateJSONData(allState));
+                JObject stateObj = new JObject();
+                stateObj.Add("state", reportedObj);
+                return stateObj.ToString();
+                //MQTT_Client.State_Publish(stateObj.ToString());
+            }
+            else
+            {
+                Console.WriteLine("传感器为本地控制模式,忽略DELTA");
+                return "";
+            }
+
+        }
+        // 创建镜像【state-reported】字段所需的数据
+        public  JObject createStateJSONData(string[] fieldArray)
+        {
+            JObject reportedObj = new JObject();
+            void AddJSONByName(string Name)
+            {
+                switch (Name)
+                {
+                    case "hotState":
+                        reportedObj.Add("hotState", hotState);
+                        break;
+                    case "coldState":
+                        reportedObj.Add("coldState", coldState);
+                        break;
+                    case "acidState":
+                        reportedObj.Add("acidState", acidState);
+                        break;
+                    case "baseState":
+                        reportedObj.Add("baseState", baseState);
+                        break;
+                    case "whiskState":
+                        reportedObj.Add("whiskState", whiskState);
+                        break;
+                    default:
+                        Console.WriteLine("【createStateJSONData】未命中");
+                        break;
+                }
+            }
+            foreach (var fieldName in fieldArray)
+            {
+                AddJSONByName(fieldName);
+            }
+            Console.WriteLine("[定位]createStateJSONData" + reportedObj);
+            return reportedObj;
+        }
+
     }
-
-
 }

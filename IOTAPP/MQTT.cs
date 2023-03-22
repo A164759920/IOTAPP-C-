@@ -12,36 +12,32 @@ using MQTTnet.Client.Options;
 using MQTTnet.Client.Connecting;
 using MQTTnet.Client.Disconnecting;
 using MQTTnet.Client.Receiving;
-namespace MQTT_API
+namespace IOTAPP
 {
 
-
-    public static class MQTT_Client
+   
+    public class MQTT_Client 
     {
+        public delegate void MessageWatcher(string Topic, string QoS, string text);
+        public  event MessageWatcher OnMessageEvent;
         private static string pid = "583419";
         private static string deviceName = "mqtt-can1";
         private static MqttClient mqttClient = null;
         private static string ServerUrl = "mqtts.heclouds.com";
         private static int Port = 1883;
         private static string UserId = "583419";
-        private static string Password = "";
+        private static string Password = "version=2018-10-31&res=products%2F583419%2Fdevices%2Fmqtt-can1&et=1679499231&method=md5&sign=xp%2F%2F40lO76WYf2SzbhD2uQ%3D%3D";
         private static string[] SubsribeList = {
-            "$sys/583419/mqtt-can1/dp/post/json/+",
-            "$sys/583419/mqtt-can1/image/get/accepted",
-            "$sys/583419/mqtt-can1/image/get/rejected",
-
+            $"$sys/{pid}/{deviceName}/dp/post/json/+",
+            $"$sys/{pid}/{deviceName}/image/get/accepted",
+            $"$sys/{pid}/{deviceName}/image/get/rejected",
+            $"$sys/{pid}/{deviceName}/image/update/accepted",
+            $"$sys/{pid}/{deviceName}/image/update/rejected",
+            $"$sys/{pid}/{deviceName}/image/update/delta"
             };
-        public static JArray createDpItem(int Vdata)
-        {
-            JObject vObject = new JObject();
-            vObject.Add("v", Vdata);
-            JArray vArray = new JArray();
-            vArray.Add(vObject);
-            return vArray;
-        }
 
 
-        public static void Connet()
+        public  void Connet()
         {
             Console.WriteLine("Work >>Begin");
             try
@@ -67,7 +63,7 @@ namespace MQTT_API
             }
             Console.WriteLine("Work >>End");
         }
-        public static void Disconnect()
+        public  void Disconnect()
         {
             if(mqttClient != null)
             {
@@ -84,7 +80,7 @@ namespace MQTT_API
         /*
          * 获取ONENET设备镜像状态
          */
-        public async static void GetStatus()
+        public async  void GetState()
         {
             var message = new MqttApplicationMessageBuilder()
                                 .WithTopic($"$sys/{pid}/{deviceName}/image/get")
@@ -93,8 +89,10 @@ namespace MQTT_API
             await mqttClient.PublishAsync(message, CancellationToken.None);
         }
 
+
+
         // 上报模拟传感器数据
-        public async static void Data_Publish(String payload)
+        public async  void Data_Publish(string payload)
         {
             var message = new MqttApplicationMessageBuilder()
                             .WithTopic($"$sys/{pid}/{deviceName}/dp/post/json")
@@ -103,8 +101,18 @@ namespace MQTT_API
             await mqttClient.PublishAsync(message,CancellationToken.None);
         }
 
+        // 上报设备状态数据
+        public async  void State_Publish(string payload)
+        {
+            var message = new MqttApplicationMessageBuilder()
+                .WithTopic($"$sys/{pid}/{deviceName}/image/update")
+                .WithPayload(payload)
+                .Build();
+            await mqttClient.PublishAsync(message, CancellationToken.None);
+        }
+
         // 连接成功触发
-        private static async Task Connected(MqttClientConnectedEventArgs e)
+        public async static Task Connected(MqttClientConnectedEventArgs e)
         {
             // 循环SubsribeList订阅所有Topic
             for (int i=0; i< SubsribeList.Length; i++)
@@ -115,13 +123,13 @@ namespace MQTT_API
         }
 
         // 断开连接触发
-        private static async Task Disconnected(MqttClientDisconnectedEventArgs e)
+        public async Task Disconnected(MqttClientDisconnectedEventArgs e)
         {
             Console.WriteLine("### DISCONNECTED ###");
         }
 
         // 接收消息触发
-        private static void MqttApplicationMessageReceived(MqttApplicationMessageReceivedEventArgs  e)
+        public  void MqttApplicationMessageReceived(MqttApplicationMessageReceivedEventArgs  e)
         {
             /*
             Console.WriteLine("### RECEIVED APPLICATION MESSAGE ###");
@@ -131,14 +139,15 @@ namespace MQTT_API
             Console.WriteLine($"+ Retain = {e.ApplicationMessage.Retain}");
             Console.WriteLine();
              */
+            
             try
             {
                 string text = Encoding.UTF8.GetString(e.ApplicationMessage.Payload);
-                string Topic = e.ApplicationMessage.Topic; string QoS = e.ApplicationMessage.QualityOfServiceLevel.ToString();
+                string Topic = e.ApplicationMessage.Topic;
+                string QoS = e.ApplicationMessage.QualityOfServiceLevel.ToString();
                 string Retained = e.ApplicationMessage.Retain.ToString();
-                Console.WriteLine("MessageReceived >>Topic:" + Topic + "; QoS: " + QoS + "; Retained: " + Retained + ";");
-                Console.WriteLine("MessageReceived >>Msg: " + text);
-
+                OnMessageEvent(Topic, QoS, text);
+                // MessageReceiveController(Topic, QoS, text);
             }
             catch(Exception exp)
             {
