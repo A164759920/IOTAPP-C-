@@ -26,7 +26,7 @@ namespace IOTAPP
         private static string ServerUrl = "mqtts.heclouds.com";
         private static int Port = 1883;
         private static string UserId = "583419";
-        private static string Password = "version=2018-10-31&res=products%2F583419&et=1679586720&method=md5&sign=1l%2BamA2hIK6Ycf5a0tr4Gg%3D%3D";
+        private static string Password = "";
         private static string[] SubsribeList = {
             $"$sys/{pid}/{deviceName}/dp/post/json/+",
             $"$sys/{pid}/{deviceName}/image/get/accepted",

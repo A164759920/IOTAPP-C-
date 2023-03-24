@@ -10,18 +10,35 @@ namespace IOTAPP
 
     public partial class canDevice
     {
-        
+        // 状态变化监视器
+        public delegate void StateWatcher(string[] stateNames);
+        public event StateWatcher EmitStateChangeEvent;
+
+        // 控制模式监视器
+        public delegate void ControlStateWatcher(string nowControlState);
+        public event ControlStateWatcher EmitControlChangeEvent;
+
         // 状态参数
         public  string controlState = "0";  // 0-本地控制(local)  1-远程控制(remote)
         public  string hotState = "0";
+        public System.Threading.Timer hotTimer = null;
+
         public  string coldState = "0";
+        public System.Threading.Timer coldTimer = null;
+
         public  string acidState = "0";
+        public System.Threading.Timer acidTimer = null;
+
         public  string baseState = "0";
+        public System.Threading.Timer baseTimer = null;
+
         public  string whiskState = "0";
+        public System.Threading.Timer whiskTimer = null;
 
         // 温度
         public  Double temperature = 0;
         public  double[] tempRange = { 20, 28 };
+
         // 溶氧
         public  Double oxygen = 0;
         public  double[] oxygenRange = { 40, 50 };
@@ -72,14 +89,14 @@ namespace IOTAPP
         }
 
         /*
-         * @description 初始化设备参数
+         * @description 初始化传感器参数
          */
         public  void InitDevice()
         {
-            temperature = NextDouble(new Random(), tempRange[0], tempRange[1], 2);
-            oxygen = NextDouble(new Random(), oxygenRange[0], oxygenRange[1], 2);
-            pH = NextDouble(new Random(), pHRange[0], pHRange[1], 2);
-            foam = NextDouble(new Random(), foamRange[0], foamRange[1], 2);
+            temperature = NextDouble(new Random(), tempRange[0], tempRange[1], 1);
+            oxygen = NextDouble(new Random(), oxygenRange[0], oxygenRange[1], 1);
+            pH = NextDouble(new Random(), pHRange[0], pHRange[1],1);
+            foam = NextDouble(new Random(), foamRange[0], foamRange[1], 1);
 
             Console.WriteLine("温度" + temperature);
             Console.WriteLine("溶氧" + oxygen);
@@ -207,6 +224,8 @@ namespace IOTAPP
             Console.WriteLine("[定位]createStateJSONData" + reportedObj);
             return reportedObj;
         }
+
+        // 处理状态-模拟参数 计时器
 
     }
 }
