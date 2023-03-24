@@ -4,11 +4,13 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Newtonsoft.Json.Linq;
+
 namespace IOTAPP
 {
 
-    public class canDevice
+    public partial class canDevice
     {
+        
         // 状态参数
         public  string controlState = "0";  // 0-本地控制(local)  1-远程控制(remote)
         public  string hotState = "0";
@@ -19,13 +21,13 @@ namespace IOTAPP
 
         // 温度
         public  Double temperature = 0;
-        public  double[] tempRange = { 20, 35 };
+        public  double[] tempRange = { 20, 28 };
         // 溶氧
         public  Double oxygen = 0;
         public  double[] oxygenRange = { 40, 50 };
         // pH
         public  Double pH = 0;
-        public  double[] pHRange = { 6, 7 };
+        public  double[] pHRange = { 4, 10 };
         // 泡沫
         public  Double foam = 0;
         public  double[] foamRange = { 40, 50 };
@@ -112,7 +114,7 @@ namespace IOTAPP
         // 处理Remote模式下的Delta信息
         public  string Remote_handleDelta(string rawData)
         {
-
+            // 同步本地存在Delta的状态
              void syncLocalStateByDelta(string Name,string Value)
             {
                 switch (Name)
@@ -151,8 +153,7 @@ namespace IOTAPP
                 foreach (JProperty item in rss["state"])
                 {
                     // Console.WriteLine("{0} : {1}", item.Name, item.Value);
-                    // 同步本地state
-                    
+                    // 同步本地state 
                     syncLocalStateByDelta(item.Name.ToString(), item.Value.ToString());
                 }
                 // 同步状态后全量状态上报

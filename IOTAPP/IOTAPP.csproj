@@ -109,6 +109,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="canDevice.cs" />
+    <Compile Include="canFuzzy.cs" />
     <Compile Include="Form1.cs">
       <SubType>Form</SubType>
     </Compile>

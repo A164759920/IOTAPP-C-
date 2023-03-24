@@ -48,18 +48,20 @@ namespace IOTAPP
         public Form1()
         {
             InitializeComponent();
+
         }
 
         private void Form1_Load(object sender, EventArgs e)
         {
-           // Device can1 = new Device();
+            // Device can1 = new Device();
+            can1.mqttInstance.Connet();
+            can1.canInstance.initFuzzy();
+            can1.mqttInstance.OnMessageEvent += can1.MessageReceiveController;
         }
 
         private void button1_Click(object sender, EventArgs e)
         {
-            
-            can1.mqttInstance.Connet();
-           can1.mqttInstance.OnMessageEvent += can1.MessageReceiveController;
+           
         }
 
         private void button2_Click(object sender, EventArgs e)
@@ -83,6 +85,14 @@ namespace IOTAPP
         private void button5_Click(object sender, EventArgs e)
         {
             Console.WriteLine("定位" + can1.canInstance.controlState);
+        }
+
+        private void button6_Click(object sender, EventArgs e)
+        {
+          //   Console.WriteLine("结果" + can1.canInstance.controlTemp(25));
+            Console.WriteLine(can1.canInstance.controlPH(7.5));
+            Console.WriteLine(can1.canInstance.controlWhisk(40,50));
+
         }
     }
 }
