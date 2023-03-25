@@ -58,8 +58,12 @@ namespace IOTAPP
                                 {
                                     void timerMethod(object obj)
                                     {
+                                        // 阈值控制
+                                        if(canInstance.temperature<= canInstance.tempRange[1] - 1.0)
+                                        {
+                                            canInstance.temperature += 1.0;
+                                        }
                                        
-                                        canInstance.temperature += 1.0;
                                         Console.WriteLine("当前温度:{0}", canInstance.temperature);
                                     }
                                     canInstance.hotTimer = new System.Threading.Timer(timerMethod,null,0,3000);
@@ -89,7 +93,10 @@ namespace IOTAPP
                                 {
                                     void timerMethod(object obj)
                                     {
-                                        canInstance.temperature -= 1.0;
+                                        if (canInstance.temperature >= canInstance.tempRange[0] + 1.0)
+                                        {
+                                            canInstance.temperature -= 1.0;
+                                        }     
                                         Console.WriteLine("当前温度:{0}", canInstance.temperature);
                                     }
                                     canInstance.coldTimer = new System.Threading.Timer(timerMethod, null, 0, 3000);
@@ -119,7 +126,10 @@ namespace IOTAPP
                                 {
                                     void timerMethod(object obj)
                                     {
-                                        canInstance.pH -= 0.5;
+                                      if(canInstance.pH >= canInstance.pHRange[0] + 0.5)
+                                        {
+                                            canInstance.pH -= 0.5;
+                                        }                                        
                                         Console.WriteLine("当前ph:{0}", canInstance.pH);
                                     }
                                     canInstance.acidTimer = new System.Threading.Timer(timerMethod, null, 0, 1000);
@@ -149,7 +159,10 @@ namespace IOTAPP
                                 {
                                     void timerMethod(object obj)
                                     {
-                                        canInstance.pH += 0.5;
+                                        if (canInstance.pH <= canInstance.pHRange[1] - 0.5)
+                                        {
+                                            canInstance.pH += 0.5;
+                                        }
                                         Console.WriteLine("当前ph:{0}", canInstance.pH);
                                     }
                                     canInstance.baseTimer = new System.Threading.Timer(timerMethod, null, 0, 1000);
