@@ -26,7 +26,7 @@ namespace IOTAPP
         private static string ServerUrl = "mqtts.heclouds.com";
         private static int Port = 1883;
         private static string UserId = "583419";
-        private static string Password = "";
+        private static string Password = "version=2018-10-31&res=products%2F583419&et=1679840060&method=md5&sign=M2kD0AQQA6JKT0NUz44FYw%3D%3D";
         private static string[] SubsribeList = {
             $"$sys/{pid}/{deviceName}/dp/post/json/+",
             $"$sys/{pid}/{deviceName}/image/get/accepted",
@@ -77,8 +77,9 @@ namespace IOTAPP
                 }
             }
         }
+
         /*
-         * 获取ONENET设备镜像状态
+         * @description 获取ONENET设备镜像状态
          */
         public async  void GetState()
         {
@@ -89,9 +90,9 @@ namespace IOTAPP
             await mqttClient.PublishAsync(message, CancellationToken.None);
         }
 
-
-
-        // 上报模拟传感器数据
+        /*
+         *  @description 上报模拟传感器数据
+         */
         public async  void Data_Publish(string payload)
         {
             var message = new MqttApplicationMessageBuilder()
@@ -101,7 +102,9 @@ namespace IOTAPP
             await mqttClient.PublishAsync(message,CancellationToken.None);
         }
 
-        // 上报设备状态数据
+        /*
+         * @description 上报设备状态数据 
+         */
         public async  void State_Publish(string payload)
         {
             var message = new MqttApplicationMessageBuilder()
@@ -111,7 +114,9 @@ namespace IOTAPP
             await mqttClient.PublishAsync(message, CancellationToken.None);
         }
 
-        // 连接成功触发
+        /*
+         * @description 连接成功触发 
+         */
         public async static Task Connected(MqttClientConnectedEventArgs e)
         {
             // 循环SubsribeList订阅所有Topic
@@ -122,13 +127,17 @@ namespace IOTAPP
             Console.WriteLine("### SUBSCRIBED ###");
         }
 
-        // 断开连接触发
+        /*
+         * @description 断开连接触发 
+         */
         public async Task Disconnected(MqttClientDisconnectedEventArgs e)
         {
             Console.WriteLine("### DISCONNECTED ###");
         }
 
-        // 接收消息触发
+        /*
+         * @description 接收消息触发
+         */
         public  void MqttApplicationMessageReceived(MqttApplicationMessageReceivedEventArgs  e)
         {
             /*

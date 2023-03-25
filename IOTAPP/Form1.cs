@@ -30,7 +30,7 @@ namespace IOTAPP
                         break;
                     case "$sys/583419/mqtt-can1/image/get/accepted":
                         // 同步远端镜像状态成功
-                        canInstance.Remote_SetState(text);
+                        canInstance.SetState(text);
                         break;
                     case "$sys/583419/mqtt-can1/image/get/rejected":
                         Console.WriteLine("同步状态失败");
@@ -44,8 +44,8 @@ namespace IOTAPP
                         break;
                 }
             }
-            // 状态-参数映射 控制器
-            public void StateChangeController(string[] stateNames)
+            // 状态-模拟参数映射 控制器
+            public void State_Params_ChangeController(string[] stateNames)
             {
                 void switchTimerByState(string stateName)
                 {
@@ -120,6 +120,7 @@ namespace IOTAPP
                                     void timerMethod(object obj)
                                     {
                                         canInstance.pH -= 0.5;
+                                        Console.WriteLine("当前ph:{0}", canInstance.pH);
                                     }
                                     canInstance.acidTimer = new System.Threading.Timer(timerMethod, null, 0, 1000);
                                 }
@@ -149,6 +150,7 @@ namespace IOTAPP
                                     void timerMethod(object obj)
                                     {
                                         canInstance.pH += 0.5;
+                                        Console.WriteLine("当前ph:{0}", canInstance.pH);
                                     }
                                     canInstance.baseTimer = new System.Threading.Timer(timerMethod, null, 0, 1000);
                                 }
@@ -207,6 +209,36 @@ namespace IOTAPP
                     switchTimerByState(item);
                 }
             }
+            // 选择控制模式
+            public void selectControlStateController(string State)
+            {
+                // 判断控制模式
+                switch (State)
+                {
+                    case "0":
+                        // 本地控制模式
+                        canInstance.LocalControlTimer = new System.Threading.Timer((state) => {
+                            canInstance.Local_controlPH(canInstance.pH);
+                            canInstance.Local_controlTemp(canInstance.temperature);
+                           // canInstance.Local_controlWhisk(canInstance.oxygen, canInstance.foam);
+                        }, null, 0, 800);
+                        break;
+                    case "1":
+                        // 远程控制模式
+                        // 若本地控制的计时器已打开，则先关闭
+                        if(canInstance.LocalControlTimer != null)
+                        {
+                            canInstance.LocalControlTimer.Dispose();
+                            canInstance.LocalControlTimer = null;
+                        }
+                        // TODO:远程控制
+                        Console.WriteLine("远程控制模式");
+                        break;
+                    default:
+                        Console.WriteLine("[openControlParam]控制模式未命中");
+                        break;
+                }
+            }
         }
         public Device can1 = new Device();
         public Form1()
@@ -217,15 +249,11 @@ namespace IOTAPP
 
         private void Form1_Load(object sender, EventArgs e)
         {
-            // Device can1 = new Device();
             can1.mqttInstance.Connet();
             can1.canInstance.InitDevice();
             can1.canInstance.initFuzzy();
-            can1.canInstance.EmitStateChangeEvent += can1.StateChangeController;
-            System.Threading.Timer openControl = new System.Threading.Timer((state) => {
-                can1.canInstance.Local_controlTemp(can1.canInstance.temperature);
-            }, null, 0, 800);
-
+            can1.canInstance.EmitStateChangeEvent += can1.State_Params_ChangeController;
+            can1.canInstance.EmitControlChangeEvent += can1.selectControlStateController;
         }
 
         private void button1_Click(object sender, EventArgs e)
@@ -239,10 +267,6 @@ namespace IOTAPP
 
         private void button2_Click(object sender, EventArgs e)
         {
-            var Payload = can1.canInstance.createJSONData(123);
-            can1.mqttInstance.Data_Publish(Payload);
-            //var Payload = canDevice.createJSONData(123);
-            //MQTT_Client.Data_Publish(Payload);
         }
 
         private void button3_Click(object sender, EventArgs e)
@@ -258,17 +282,22 @@ namespace IOTAPP
         private void button5_Click(object sender, EventArgs e)
         {
             can1.canInstance.InitDevice();
-            Console.WriteLine("定位" + can1.canInstance.controlState);
+            Console.WriteLine("控制状态" + can1.canInstance.controlState);
         }
 
         private void button6_Click(object sender, EventArgs e)
         {
-            can1.canInstance.Local_controlTemp(can1.canInstance.temperature);
-          //  can1.canInstance.Local_controlPH(can1.canInstance.pH);
+
+            can1.selectControlStateController("0");
           //   Console.WriteLine("结果" + can1.canInstance.controlTemp(25));
             // Console.WriteLine(can1.canInstance.controlPH(7.5));
             // Console.WriteLine(can1.canInstance.controlWhisk(40,50));
 
+        }
+
+        private void button7_Click(object sender, EventArgs e)
+        {
+            can1.selectControlStateController("1");
         }
     }
 }

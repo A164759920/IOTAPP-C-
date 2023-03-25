@@ -138,9 +138,10 @@ namespace IOTAPP
         public void initFuzzy()
         {
            fuzzy_temperature = CreateTempSystem();
-         //   fuzzy_ph = CreatephSystem();
+           fuzzy_ph = CreatephSystem();
           //  fuzzy_whisk = CreateWhiskSystem();
         }
+
         // 本地控制-温度
         public void Local_controlTemp(double temp)
         {

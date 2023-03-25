@@ -17,6 +17,7 @@ namespace IOTAPP
         // 控制模式监视器
         public delegate void ControlStateWatcher(string nowControlState);
         public event ControlStateWatcher EmitControlChangeEvent;
+        public System.Threading.Timer LocalControlTimer = null;
 
         // 状态参数
         public  string controlState = "0";  // 0-本地控制(local)  1-远程控制(remote)
@@ -44,7 +45,7 @@ namespace IOTAPP
         public  double[] oxygenRange = { 40, 50 };
         // pH
         public  Double pH = 0;
-        public  double[] pHRange = { 4, 10 };
+        public  double[] pHRange = { 6, 8 };
         // 泡沫
         public  Double foam = 0;
         public  double[] foamRange = { 40, 50 };
@@ -68,10 +69,11 @@ namespace IOTAPP
             vArray.Add(vObject);
             return vArray;
         }
+
         /*
-         * 创建上报payload
+         * @description 创建上报payload
          */
-        public  string createJSONData(int id)
+        public string createJSONData(int id)
         {
             JObject DataObj = new JObject();
             var tempArray = createDpItem(temperature);
@@ -91,6 +93,7 @@ namespace IOTAPP
         /*
          * @description 初始化传感器参数
          */
+
         public  void InitDevice()
         {
             temperature = NextDouble(new Random(), tempRange[0], tempRange[1], 1);
@@ -105,10 +108,11 @@ namespace IOTAPP
 
              */
         }
+
         /*
-         * @description 设置 远程控制时 设备状态 desired
+         * @description 设置设备状态并上报到【控制模式选择控制器】
          */
-        public  void Remote_SetState(string rawData)
+        public  void SetState(string rawData)
         {
             // 若为本地控制模式，则不处理
             JObject rss = JObject.Parse(rawData);
@@ -121,15 +125,22 @@ namespace IOTAPP
                 baseState = (string)rss["state"]["desired"]["baseState"];
                 whiskState = (string)rss["state"]["desired"]["whiskState"];
             }
-            else
+            else if(controlState == "0")// 本地控制模式
             {
                 Console.WriteLine("[定位]Remote_SetState为本地控制模式，不同步数据");
             }
- 
+            else
+            {
+                Console.WriteLine("[SetState]参数错误");
+            }
+            // 上报状态改变
+            EmitControlChangeEvent(controlState);
         }
 
-        // 处理Remote模式下的Delta信息
-        public  string Remote_handleDelta(string rawData)
+        /*
+         * @description 处理Remote模式下的Delta信息
+         */
+        public string Remote_handleDelta(string rawData)
         {
             // 同步本地存在Delta的状态
              void syncLocalStateByDelta(string Name,string Value)
@@ -189,8 +200,11 @@ namespace IOTAPP
             }
 
         }
-        // 创建镜像【state-reported】字段所需的数据
-        public  JObject createStateJSONData(string[] fieldArray)
+        
+        /*
+         * @description 创建镜像【state-reported】字段所需的数据
+         */
+        public JObject createStateJSONData(string[] fieldArray)
         {
             JObject reportedObj = new JObject();
             void AddJSONByName(string Name)
@@ -224,8 +238,6 @@ namespace IOTAPP
             Console.WriteLine("[定位]createStateJSONData" + reportedObj);
             return reportedObj;
         }
-
-        // 处理状态-模拟参数 计时器
 
     }
 }
