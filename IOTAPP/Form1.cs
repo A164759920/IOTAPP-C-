@@ -236,7 +236,7 @@ namespace IOTAPP
                     case "0":
                         // 本地控制模式
                         canInstance.LocalControlTimer = new System.Threading.Timer((state) => {
-                          //  canInstance.Local_controlPH(canInstance.pH);
+                            canInstance.Local_controlPH(canInstance.pH);
                             canInstance.Local_controlTemp(canInstance.temperature);
                            // canInstance.Local_controlWhisk(canInstance.oxygen, canInstance.foam);
                         }, null, 0, 800);
@@ -282,37 +282,116 @@ namespace IOTAPP
             can1.mqttInstance.OnMessageEvent += can1.MessageReceiveController;
             // 上报Delta状态委托
             can1.canInstance.EmitDeltaStateChangeEvent += can1.mqttInstance.State_Publish;
+            // 上报传感器数据
             System.Threading.Timer timerpublish = new System.Threading.Timer((state) => {
                var Payload = can1.canInstance.createJSONData(123);
                // can1.mqttInstance.Data_Publish(Payload);
-                Console.WriteLine("当前温度:{0}", can1.canInstance.temperature);
+               // Console.WriteLine("当前温度:{0}", can1.canInstance.temperature);
             }, null, 0, 2000);
-            Thread thread = new Thread(new ThreadStart(UpdateLabel));
-            thread.Start();
+            Thread uodateThread = new Thread(new ThreadStart(UpdateLabel));
+            uodateThread.Start();
 
         }
-        // 动态更新各传感器参数值到对应label
+        // 动态更新页面参数值到对应label
         private void UpdateLabel()
         {
             while (true)
             {
-                Label tempLabel = this.Controls.Find("label1", true).FirstOrDefault() as Label;
-                tempLabel.Invoke(new Action(() => {
-                    tempLabel.Text = can1.canInstance.temperature.ToString();
-                }));
-                Label oxygenLabel = this.Controls.Find("label2", true).FirstOrDefault() as Label;
-                oxygenLabel.Invoke(new Action(() => {
-                    oxygenLabel.Text = can1.canInstance.oxygen.ToString();
-                }));
-                Label phLabel = this.Controls.Find("label3", true).FirstOrDefault() as Label;
-                phLabel.Invoke(new Action(() => {
-                    phLabel.Text = can1.canInstance.pH.ToString();
-                }));
-                Label foamLabel = this.Controls.Find("label4", true).FirstOrDefault() as Label;
-                foamLabel.Invoke(new Action(() => {
-                    foamLabel.Text = can1.canInstance.foam.ToString();
-                }));
-                Thread.Sleep(1000);
+                try
+                {
+                    Label tempLabel = this.Controls.Find("label1", true).FirstOrDefault() as Label;
+                    tempLabel.Invoke(new Action(() => {
+                        tempLabel.Text = can1.canInstance.temperature.ToString();
+                    }));
+                    Label oxygenLabel = this.Controls.Find("label2", true).FirstOrDefault() as Label;
+                    oxygenLabel.Invoke(new Action(() => {
+                        oxygenLabel.Text = can1.canInstance.oxygen.ToString();
+                    }));
+                    Label phLabel = this.Controls.Find("label3", true).FirstOrDefault() as Label;
+                    phLabel.Invoke(new Action(() => {
+                        phLabel.Text = can1.canInstance.pH.ToString();
+                    }));
+                    Label foamLabel = this.Controls.Find("label4", true).FirstOrDefault() as Label;
+                    foamLabel.Invoke(new Action(() => {
+                        foamLabel.Text = can1.canInstance.foam.ToString();
+                    }));
+
+                    Label hotLabel = this.Controls.Find("hotLabel", true).FirstOrDefault() as Label;
+                    hotLabel.Invoke(new Action(() => {
+                        if (can1.canInstance.hotState.ToString() == "0")
+                        {
+                            hotLabel.BackColor = Color.Red;
+                            hotLabel.Text = "OFF";
+                        }
+                        else
+                        {
+                            hotLabel.BackColor = Color.Green;
+                            hotLabel.Text = "ON";
+                        }
+                    }));
+
+                    Label coldLabel = this.Controls.Find("coldLabel", true).FirstOrDefault() as Label;
+                    coldLabel.Invoke(new Action(() => {
+                        if (can1.canInstance.coldState.ToString() == "0")
+                        {
+                            coldLabel.BackColor = Color.Red;
+                            coldLabel.Text = "OFF";
+                        }
+                        else
+                        {
+                            coldLabel.BackColor = Color.Green;
+                            coldLabel.Text = "ON";
+                        }
+                    }));
+                    Label acidLabel = this.Controls.Find("acidLabel", true).FirstOrDefault() as Label;
+                    acidLabel.Invoke(new Action(() => {
+                        if (can1.canInstance.acidState.ToString() == "0")
+                        {
+                            acidLabel.BackColor = Color.Red;
+                            acidLabel.Text = "OFF";
+                        }
+                        else
+                        {
+                            acidLabel.BackColor = Color.Green;
+                            acidLabel.Text = "ON";
+                        }
+                    }));
+                    Label baseLabel = this.Controls.Find("baseLabel", true).FirstOrDefault() as Label;
+                    baseLabel.Invoke(new Action(() => {
+                        if (can1.canInstance.baseState.ToString() == "0")
+                        {
+                            baseLabel.BackColor = Color.Red;
+                            baseLabel.Text = "OFF";
+                        }
+                        else
+                        {
+                            baseLabel.BackColor = Color.Green;
+                            baseLabel.Text = "ON";
+                        }
+                    }));
+                    Label whiskLabel = this.Controls.Find("whiskLabel", true).FirstOrDefault() as Label;
+                    whiskLabel.Invoke(new Action(() => {
+                        if (can1.canInstance.whiskState.ToString() == "0")
+                        {
+                            whiskLabel.BackColor = Color.Red;
+                            whiskLabel.Text = "OFF";
+                        }
+                        else
+                        {
+                            whiskLabel.BackColor = Color.Green;
+                            whiskLabel.Text = "ON";
+                        }
+                    }));
+                    Thread.Sleep(1000);
+                }
+                catch (Exception exp)
+                {
+                    // 防止强制关闭报错
+                    Console.WriteLine("[updateLabel]主窗口已关闭");
+                    return;
+                }
+
+
             }
 
         }
