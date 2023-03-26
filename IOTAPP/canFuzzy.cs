@@ -151,10 +151,10 @@ namespace IOTAPP
             inputValues.Add(fvTemperature, temp);
             Dictionary<FuzzyVariable, double> result = fuzzy_temperature.Calculate(inputValues);
             double stateValue = result[fvState];
-            Console.WriteLine("控制结果{0}", stateValue);
+            //Console.WriteLine("控制结果{0}", stateValue);
             if(double.IsNaN(stateValue))
             {
-                Console.WriteLine("[controlTemp]控制结果为NAN");
+              //  Console.WriteLine("[controlTemp]控制结果为NAN");
             }else
             {
                 if (stateValue >= 0.0 && stateValue < 10.0)
@@ -167,7 +167,7 @@ namespace IOTAPP
                 }
                 else if (stateValue >= 10.0 && stateValue < 20.0)
                 {
-                    Console.WriteLine("[controlTemp]温控正常");
+                 //   Console.WriteLine("[controlTemp]温控正常");
                 }
                 else if (stateValue >= 20.0 && stateValue <= 30.0)
                 {
@@ -179,7 +179,7 @@ namespace IOTAPP
                 }
                 else
                 {
-                    Console.WriteLine("[controlTemp]温控未命中");
+                //    Console.WriteLine("[controlTemp]温控未命中");
                 }
             }
         }
@@ -194,7 +194,7 @@ namespace IOTAPP
             double stateValue = result[fvState];
             if (double.IsNaN(stateValue))
             {
-                Console.WriteLine("[controlPH]控制结果为NAN");
+             //   Console.WriteLine("[controlPH]控制结果为NAN");
             }
             else
             {
@@ -216,7 +216,7 @@ namespace IOTAPP
                 }
                 else
                 {
-                    Console.WriteLine("[controlPH]PH正常");
+                  //  Console.WriteLine("[controlPH]PH正常");
                 }
             }
         }

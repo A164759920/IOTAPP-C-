@@ -11,7 +11,6 @@ using System.Windows.Forms;
 using MQTTnet;
 namespace IOTAPP
 {
-   // public delegate void MessageWatcher(string Topic, string QoS, string text);
     public partial class Form1 : Form
     {
        
@@ -22,7 +21,7 @@ namespace IOTAPP
             public void MessageReceiveController(string Topic, string QoS, string text)
             {
                 Console.WriteLine("MessageReceived >>Topic:" + Topic + "; QoS: " + QoS);
-                Console.WriteLine("MessageReceived >>Msg: " + text);
+             //   Console.WriteLine("MessageReceived >>Msg: " + text);
                 switch (Topic)
                 {
                     case "$sys/583419/mqtt-can1/dp/post/json/+":
@@ -40,7 +39,7 @@ namespace IOTAPP
                         canInstance.Remote_handleDelta(text);
                         break;
                     default:
-                        Console.WriteLine("未命中");
+                       // Console.WriteLine("未命中");
                         break;
                 }
             }
@@ -64,7 +63,7 @@ namespace IOTAPP
                                             canInstance.temperature += 1.0;
                                         }
                                        
-                                        Console.WriteLine("当前温度:{0}", canInstance.temperature);
+                                     
                                     }
                                     canInstance.hotTimer = new System.Threading.Timer(timerMethod,null,0,3000);
                                 }
@@ -215,6 +214,12 @@ namespace IOTAPP
                                 Console.WriteLine("[StateChangeController]搅拌器错误");
                             }
                             break;
+                        case "controlState":
+                            Console.WriteLine("命中控制模式变化");
+                            break;
+                        default:
+                            Console.WriteLine("[State_Params_ChangeController]未命中");
+                            break;
                     }
                 }
                 foreach(string item in stateNames)
@@ -231,7 +236,7 @@ namespace IOTAPP
                     case "0":
                         // 本地控制模式
                         canInstance.LocalControlTimer = new System.Threading.Timer((state) => {
-                            canInstance.Local_controlPH(canInstance.pH);
+                          //  canInstance.Local_controlPH(canInstance.pH);
                             canInstance.Local_controlTemp(canInstance.temperature);
                            // canInstance.Local_controlWhisk(canInstance.oxygen, canInstance.foam);
                         }, null, 0, 800);
@@ -265,16 +270,21 @@ namespace IOTAPP
             can1.mqttInstance.Connet();
             can1.canInstance.InitDevice();
             can1.canInstance.initFuzzy();
+            can1.selectControlStateController(can1.canInstance.controlState);
             can1.canInstance.EmitStateChangeEvent += can1.State_Params_ChangeController;
             can1.canInstance.EmitControlChangeEvent += can1.selectControlStateController;
         }
 
         private void button1_Click(object sender, EventArgs e)
         {
+            // mqtt订阅分发委托
             can1.mqttInstance.OnMessageEvent += can1.MessageReceiveController;
+            // 上报Delta状态委托
+            can1.canInstance.EmitDeltaStateChangeEvent += can1.mqttInstance.State_Publish;
             System.Threading.Timer timerpublish = new System.Threading.Timer((state) => {
-                var Payload = can1.canInstance.createJSONData(123);
+               var Payload = can1.canInstance.createJSONData(123);
                 can1.mqttInstance.Data_Publish(Payload);
+                Console.WriteLine("当前温度:{0}", can1.canInstance.temperature);
             }, null, 0, 2000);
         }
 
@@ -295,7 +305,7 @@ namespace IOTAPP
         private void button5_Click(object sender, EventArgs e)
         {
             can1.canInstance.InitDevice();
-            Console.WriteLine("控制状态" + can1.canInstance.controlState);
+
         }
 
         private void button6_Click(object sender, EventArgs e)
@@ -311,6 +321,15 @@ namespace IOTAPP
         private void button7_Click(object sender, EventArgs e)
         {
             can1.selectControlStateController("1");
+        }
+
+        private void button8_Click(object sender, EventArgs e)
+        {
+            Console.WriteLine("控制状态" + can1.canInstance.controlState);
+            Console.WriteLine("加热器状态" + can1.canInstance.hotState);
+            Console.WriteLine("制冷器状态" + can1.canInstance.coldState);
+            Console.WriteLine("加酸状态" + can1.canInstance.acidState);
+            Console.WriteLine("加碱状态" + can1.canInstance.baseState);
         }
     }
 }

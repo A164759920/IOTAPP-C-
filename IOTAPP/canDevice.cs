@@ -10,9 +10,13 @@ namespace IOTAPP
 
     public partial class canDevice
     {
-        // 状态变化监视器
+        // 状态变化监视器 -- 用于同步本地数据
         public delegate void StateWatcher(string[] stateNames);
         public event StateWatcher EmitStateChangeEvent;
+
+        // 状态变化上报器 -- 用于同步远程镜像数据
+        public delegate void DeltaStateWatcher(string payload);
+        public event DeltaStateWatcher EmitDeltaStateChangeEvent;
 
         // 控制模式监视器
         public delegate void ControlStateWatcher(string nowControlState);
@@ -110,7 +114,7 @@ namespace IOTAPP
         }
 
         /*
-         * @description 设置设备状态并上报到【控制模式选择控制器】
+         * @description 手动同步状态并上报【控制模式选择控制器】
          */
         public  void SetState(string rawData)
         {
@@ -133,14 +137,14 @@ namespace IOTAPP
             {
                 Console.WriteLine("[SetState]参数错误");
             }
-            // 上报状态改变
+            // 上报控制模式改变
             EmitControlChangeEvent(controlState);
         }
 
         /*
-         * @description 处理Remote模式下的Delta信息
+         * @description 自动处理Remote模式下的Delta信息
          */
-        public string Remote_handleDelta(string rawData)
+        public void Remote_handleDelta(string rawData)
         {
             // 同步本地存在Delta的状态
              void syncLocalStateByDelta(string Name,string Value)
@@ -173,30 +177,36 @@ namespace IOTAPP
             if (rss["state"]["controlState"].ToString() != "")
             {
                 controlState = rss["state"]["controlState"].ToString();
+                // 上报控制模式改变
+                EmitControlChangeEvent(controlState);
             }
             // 遍历Delta数据的state的key-value 更新本地的state的信息
             if(controlState == "1")
-            {
-                Console.WriteLine("待同步的字段", rss["state"].ToString());
+            {   
                 foreach (JProperty item in rss["state"])
                 {
                     // Console.WriteLine("{0} : {1}", item.Name, item.Value);
                     // 同步本地state 
                     syncLocalStateByDelta(item.Name.ToString(), item.Value.ToString());
+                    string[] stateName = { item.Name.ToString() };
+                    // 同步状态后上报到【状态-参数映射控制器】
+                    Console.WriteLine("Remote执行了" + stateName);
+                    EmitStateChangeEvent(stateName);
                 }
+
                 // 同步状态后全量状态上报
                 JObject reportedObj = new JObject();
                 string[] allState = { "controlState", "hotState", "coldState", "acidState", "baseState", "whiskState" };
                 reportedObj.Add("reported", createStateJSONData(allState));
                 JObject stateObj = new JObject();
                 stateObj.Add("state", reportedObj);
-                return stateObj.ToString();
+              
+                EmitDeltaStateChangeEvent(stateObj.ToString());
                 //MQTT_Client.State_Publish(stateObj.ToString());
             }
             else
             {
                 Console.WriteLine("传感器为本地控制模式,忽略DELTA");
-                return "";
             }
 
         }
