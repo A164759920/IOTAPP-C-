@@ -273,6 +273,7 @@ namespace IOTAPP
             can1.selectControlStateController(can1.canInstance.controlState);
             can1.canInstance.EmitStateChangeEvent += can1.State_Params_ChangeController;
             can1.canInstance.EmitControlChangeEvent += can1.selectControlStateController;
+            
         }
 
         private void button1_Click(object sender, EventArgs e)
@@ -283,17 +284,45 @@ namespace IOTAPP
             can1.canInstance.EmitDeltaStateChangeEvent += can1.mqttInstance.State_Publish;
             System.Threading.Timer timerpublish = new System.Threading.Timer((state) => {
                var Payload = can1.canInstance.createJSONData(123);
-                can1.mqttInstance.Data_Publish(Payload);
+               // can1.mqttInstance.Data_Publish(Payload);
                 Console.WriteLine("当前温度:{0}", can1.canInstance.temperature);
             }, null, 0, 2000);
-        }
+            Thread thread = new Thread(new ThreadStart(UpdateLabel));
+            thread.Start();
 
+        }
+        // 动态更新各传感器参数值到对应label
+        private void UpdateLabel()
+        {
+            while (true)
+            {
+                Label tempLabel = this.Controls.Find("label1", true).FirstOrDefault() as Label;
+                tempLabel.Invoke(new Action(() => {
+                    tempLabel.Text = can1.canInstance.temperature.ToString();
+                }));
+                Label oxygenLabel = this.Controls.Find("label2", true).FirstOrDefault() as Label;
+                oxygenLabel.Invoke(new Action(() => {
+                    oxygenLabel.Text = can1.canInstance.oxygen.ToString();
+                }));
+                Label phLabel = this.Controls.Find("label3", true).FirstOrDefault() as Label;
+                phLabel.Invoke(new Action(() => {
+                    phLabel.Text = can1.canInstance.pH.ToString();
+                }));
+                Label foamLabel = this.Controls.Find("label4", true).FirstOrDefault() as Label;
+                foamLabel.Invoke(new Action(() => {
+                    foamLabel.Text = can1.canInstance.foam.ToString();
+                }));
+                Thread.Sleep(1000);
+            }
+
+        }
         private void button2_Click(object sender, EventArgs e)
         {
         }
 
         private void button3_Click(object sender, EventArgs e)
         {
+
             can1.mqttInstance.Disconnect();
         }
 
@@ -331,5 +360,7 @@ namespace IOTAPP
             Console.WriteLine("加酸状态" + can1.canInstance.acidState);
             Console.WriteLine("加碱状态" + can1.canInstance.baseState);
         }
+
+
     }
 }

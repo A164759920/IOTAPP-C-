@@ -124,7 +124,7 @@ namespace IOTAPP
             if(controlState == "1")
             {
                 hotState = (string)rss["state"]["desired"]["hotState"];
-                coldState = (string)rss["state"]["desired"]["coldState"];
+                coldState = (string)rss["state"]["desi_red"]["coldState"];
                 acidState = (string)rss["state"]["desired"]["acidState"];
                 baseState = (string)rss["state"]["desired"]["baseState"];
                 whiskState = (string)rss["state"]["desired"]["whiskState"];
