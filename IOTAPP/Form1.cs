@@ -17,7 +17,14 @@ namespace IOTAPP
         public class Device
         {
             public canDevice canInstance = new canDevice();
-            public MQTT_Client mqttInstance = new MQTT_Client();
+            public MQTT_Client mqttInstance = new MQTT_Client(
+                Pid: "583419",
+                DeviceName: "mqtt-can1",
+                Port:1883,
+                ServerUrl: "mqtts.heclouds.com",
+                UserId: "583419",
+                Password: "version=2018-10-31&res=products%2F583419&et=1680002429&method=md5&sign=8OiPDOTkevbfohDhXW0tSQ%3D%3D"
+                );
             public void MessageReceiveController(string Topic, string QoS, string text)
             {
                 Console.WriteLine("MessageReceived >>Topic:" + Topic + "; QoS: " + QoS);
@@ -267,7 +274,7 @@ namespace IOTAPP
 
         private void Form1_Load(object sender, EventArgs e)
         {
-            can1.mqttInstance.Connet();
+            //can1.mqttInstance.Connet();
             can1.canInstance.InitDevice();
             can1.canInstance.initFuzzy();
             can1.selectControlStateController(can1.canInstance.controlState);
@@ -278,6 +285,7 @@ namespace IOTAPP
 
         private void button1_Click(object sender, EventArgs e)
         {
+            can1.mqttInstance.Connet();
             // mqtt订阅分发委托
             can1.mqttInstance.OnMessageEvent += can1.MessageReceiveController;
             // 上报Delta状态委托

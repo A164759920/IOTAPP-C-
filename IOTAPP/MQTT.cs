@@ -20,33 +20,46 @@ namespace IOTAPP
     {
         public delegate void MessageWatcher(string Topic, string QoS, string text);
         public  event MessageWatcher OnMessageEvent;
-        private static string pid = "583419";
-        private static string deviceName = "mqtt-can1";
-        private static MqttClient mqttClient = null;
-        private static string ServerUrl = "mqtts.heclouds.com";
-        private static int Port = 1883;
-        private static string UserId = "583419";
-        private static string Password = "version=2018-10-31&res=products%2F583419&et=1679840060&method=md5&sign=M2kD0AQQA6JKT0NUz44FYw%3D%3D";
-        private static string[] SubsribeList = {
-            $"$sys/{pid}/{deviceName}/dp/post/json/+",
+        public string pid { get; set; }
+        public string deviceName { get; set; }
+        public static MqttClient mqttClient = null;
+        public int port { get; set; }
+        public string serverUrl { get; set; }
+        public string userId { get; set; }
+        public string password { get; set; }
+        // 使用创建实例时的传入的参数进行配置
+        public MQTT_Client(string Pid,string DeviceName, int Port, string ServerUrl, string UserId, string Password)
+        {
+            pid = Pid;
+            deviceName = DeviceName;
+            port = Port;
+            serverUrl = ServerUrl;
+            userId = UserId;
+            password = Password;
+        }
+        public string[] SubsribeList = null;
+
+
+        public  void Connet()
+        {
+          //  Console.WriteLine("Work >>Begin");
+            // 需订阅的topic
+            string[] tempList = {
+                $"$sys/{pid}/{deviceName}/dp/post/json/+",
             $"$sys/{pid}/{deviceName}/image/get/accepted",
             $"$sys/{pid}/{deviceName}/image/get/rejected",
             $"$sys/{pid}/{deviceName}/image/update/accepted",
             $"$sys/{pid}/{deviceName}/image/update/rejected",
             $"$sys/{pid}/{deviceName}/image/update/delta"
             };
-
-
-        public  void Connet()
-        {
-            Console.WriteLine("Work >>Begin");
+            SubsribeList = tempList;
             try
             {
                 var factory = new MqttFactory();　　　　　　　　//声明一个MQTT客户端的标准步骤 的第一步
                 mqttClient = factory.CreateMqttClient() as MqttClient;  //factory.CreateMqttClient()实际是一个接口类型（IMqttClient）,这里是把他的类型变了一下
                 var options = new MqttClientOptionsBuilder()　　　　//实例化一个MqttClientOptionsBulider
-                    .WithTcpServer(ServerUrl, Port)
-                    .WithCredentials(UserId, Password)
+                    .WithTcpServer(serverUrl, port)
+                    .WithCredentials(userId, password)
                     .WithClientId("mqtt-can1")
                     .Build();
                 mqttClient.ConnectAsync(options);      //连接服务器
@@ -61,7 +74,7 @@ namespace IOTAPP
 
                 Console.WriteLine(exp);
             }
-            Console.WriteLine("Work >>End");
+           // Console.WriteLine("Work >>End");
         }
         public  void Disconnect()
         {
@@ -117,7 +130,7 @@ namespace IOTAPP
         /*
          * @description 连接成功触发 
          */
-        public async static Task Connected(MqttClientConnectedEventArgs e)
+        public async  Task Connected(MqttClientConnectedEventArgs e)
         {
             // 循环SubsribeList订阅所有Topic
             for (int i=0; i< SubsribeList.Length; i++)
@@ -140,15 +153,6 @@ namespace IOTAPP
          */
         public  void MqttApplicationMessageReceived(MqttApplicationMessageReceivedEventArgs  e)
         {
-            /*
-            Console.WriteLine("### RECEIVED APPLICATION MESSAGE ###");
-            Console.WriteLine($"+ Topic = {e.ApplicationMessage.Topic}");
-            Console.WriteLine($"+ Payload = {Encoding.UTF8.GetString(e.ApplicationMessage.Payload)}");
-            Console.WriteLine($"+ QoS = {e.ApplicationMessage.QualityOfServiceLevel}");
-            Console.WriteLine($"+ Retain = {e.ApplicationMessage.Retain}");
-            Console.WriteLine();
-             */
-            
             try
             {
                 string text = Encoding.UTF8.GetString(e.ApplicationMessage.Payload);
