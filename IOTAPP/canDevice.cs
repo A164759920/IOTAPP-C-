@@ -124,7 +124,7 @@ namespace IOTAPP
             if(controlState == "1")
             {
                 hotState = (string)rss["state"]["desired"]["hotState"];
-                coldState = (string)rss["state"]["desi_red"]["coldState"];
+                coldState = (string)rss["state"]["desired"]["coldState"];
                 acidState = (string)rss["state"]["desired"]["acidState"];
                 baseState = (string)rss["state"]["desired"]["baseState"];
                 whiskState = (string)rss["state"]["desired"]["whiskState"];
@@ -173,19 +173,35 @@ namespace IOTAPP
             }
 
             JObject rss = JObject.Parse(rawData);
+
             // 先更新controlState的状态
-            if (rss["state"]["controlState"].ToString() != "")
+            string temp_controlState = null;
+            Console.WriteLine(rss["state"]);
+            try
             {
-                controlState = rss["state"]["controlState"].ToString();
+                temp_controlState = rss["state"]["controlState"].ToString();
+            }
+            catch (Exception exp)
+            {
+                Console.WriteLine("错误" + exp);
+               
+            }
+            
+             if (temp_controlState!=null)
+            {
+
+                controlState = temp_controlState;
                 // 上报控制模式改变
                 EmitControlChangeEvent(controlState);
             }
             // 遍历Delta数据的state的key-value 更新本地的state的信息
-            if(controlState == "1")
-            {   
+            Console.WriteLine("控制状态"+ controlState);
+            if (controlState == "1")
+            {
+               
                 foreach (JProperty item in rss["state"])
                 {
-                    // Console.WriteLine("{0} : {1}", item.Name, item.Value);
+                        Console.WriteLine("{0} : {1}", item.Name, item.Value);
                     // 同步本地state 
                     syncLocalStateByDelta(item.Name.ToString(), item.Value.ToString());
                     string[] stateName = { item.Name.ToString() };
@@ -235,6 +251,9 @@ namespace IOTAPP
                         break;
                     case "whiskState":
                         reportedObj.Add("whiskState", whiskState);
+                        break;
+                    case "controlState":
+                        reportedObj.Add("controlState", controlState);
                         break;
                     default:
                         Console.WriteLine("【createStateJSONData】未命中");

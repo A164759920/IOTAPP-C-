@@ -63,6 +63,7 @@ namespace IOTAPP
                     .WithClientId("mqtt-can1")
                     .Build();
                 mqttClient.ConnectAsync(options);      //连接服务器
+                Console.WriteLine(mqttClient.Options);
                 // 定义状态Handler
                 mqttClient.ConnectedHandler = new MqttClientConnectedHandlerDelegate(new Func<MqttClientConnectedEventArgs, Task>(Connected));
                 mqttClient.DisconnectedHandler = new MqttClientDisconnectedHandlerDelegate(new Func<MqttClientDisconnectedEventArgs, Task>(Disconnected));
@@ -120,6 +121,7 @@ namespace IOTAPP
          */
         public async  void State_Publish(string payload)
         {
+            Console.WriteLine("State_Publish定位" + payload);
             var message = new MqttApplicationMessageBuilder()
                 .WithTopic($"$sys/{pid}/{deviceName}/image/update")
                 .WithPayload(payload)

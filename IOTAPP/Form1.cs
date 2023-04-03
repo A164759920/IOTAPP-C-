@@ -8,6 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Threading;
 using System.Windows.Forms;
+using Newtonsoft.Json.Linq;
 using MQTTnet;
 namespace IOTAPP
 {
@@ -20,11 +21,10 @@ namespace IOTAPP
             public MQTT_Client mqttInstance = new MQTT_Client(
                 Pid: "583419",
                 DeviceName: "mqtt-can1",
-                Port:1883,
+                Port: 1883,
                 ServerUrl: "mqtts.heclouds.com",
                 UserId: "583419",
-                Password: "version=2018-10-31&res=products%2F583419&et=1680002429&method=md5&sign=8OiPDOTkevbfohDhXW0tSQ%3D%3D"
-                );
+                Password: "version=2018-10-31&res=products%2F583419&et=1680594001&method=md5&sign=fdSIAKXJakBX30adrnBt3w%3D%3D");
             public void MessageReceiveController(string Topic, string QoS, string text)
             {
                 Console.WriteLine("MessageReceived >>Topic:" + Topic + "; QoS: " + QoS);
@@ -76,7 +76,7 @@ namespace IOTAPP
                                 }
                                 else
                                 {
-                                    Console.WriteLine("加热器已在运行");
+                                  //  Console.WriteLine("加热器已在运行");
                                 }
                             }
                             else if(canInstance.hotState == "0")
@@ -103,13 +103,13 @@ namespace IOTAPP
                                         {
                                             canInstance.temperature -= 1.0;
                                         }     
-                                        Console.WriteLine("当前温度:{0}", canInstance.temperature);
+                                       // Console.WriteLine("当前温度:{0}", canInstance.temperature);
                                     }
                                     canInstance.coldTimer = new System.Threading.Timer(timerMethod, null, 0, 3000);
                                 }
                                 else
                                 {
-                                    Console.WriteLine("制冷器已在运行");
+                                   // Console.WriteLine("制冷器已在运行");
                                 }
                             }
                             else if (canInstance.coldState == "0")
@@ -136,7 +136,7 @@ namespace IOTAPP
                                         {
                                             canInstance.pH -= 0.5;
                                         }                                        
-                                        Console.WriteLine("当前ph:{0}", canInstance.pH);
+                                      //  Console.WriteLine("当前ph:{0}", canInstance.pH);
                                     }
                                     canInstance.acidTimer = new System.Threading.Timer(timerMethod, null, 0, 1000);
                                 }
@@ -169,7 +169,7 @@ namespace IOTAPP
                                         {
                                             canInstance.pH += 0.5;
                                         }
-                                        Console.WriteLine("当前ph:{0}", canInstance.pH);
+                                     //   Console.WriteLine("当前ph:{0}", canInstance.pH);
                                     }
                                     canInstance.baseTimer = new System.Threading.Timer(timerMethod, null, 0, 1000);
                                 }
@@ -274,7 +274,7 @@ namespace IOTAPP
 
         private void Form1_Load(object sender, EventArgs e)
         {
-            //can1.mqttInstance.Connet();
+            can1.mqttInstance.Connet();
             can1.canInstance.InitDevice();
             can1.canInstance.initFuzzy();
             can1.selectControlStateController(can1.canInstance.controlState);
@@ -285,16 +285,26 @@ namespace IOTAPP
 
         private void button1_Click(object sender, EventArgs e)
         {
-            can1.mqttInstance.Connet();
+
             // mqtt订阅分发委托
             can1.mqttInstance.OnMessageEvent += can1.MessageReceiveController;
             // 上报Delta状态委托
             can1.canInstance.EmitDeltaStateChangeEvent += can1.mqttInstance.State_Publish;
-            // 上报传感器数据
+
+            // 上报传感器+状态数据
             System.Threading.Timer timerpublish = new System.Threading.Timer((state) => {
-               var Payload = can1.canInstance.createJSONData(123);
-               // can1.mqttInstance.Data_Publish(Payload);
-               // Console.WriteLine("当前温度:{0}", can1.canInstance.temperature);
+                // 传感器数据
+                var Payload = can1.canInstance.createJSONData(123);
+                can1.mqttInstance.Data_Publish(Payload);
+                // 状态数据
+                JObject reportedObj = new JObject();
+                string[] allState = { "controlState", "hotState", "coldState", "acidState", "baseState", "whiskState" };
+                reportedObj.Add("reported", can1.canInstance.createStateJSONData(allState));
+                JObject stateObj = new JObject();
+                stateObj.Add("state", reportedObj);
+                can1.mqttInstance.State_Publish(stateObj.ToString());
+
+                // Console.WriteLine("当前温度:{0}", can1.canInstance.temperature);
             }, null, 0, 2000);
             Thread uodateThread = new Thread(new ThreadStart(UpdateLabel));
             uodateThread.Start();
